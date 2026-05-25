@@ -1,40 +1,30 @@
 import streamlit as st
 import yt_dlp
+import static_ffmpeg
 import os
 import tempfile
 
+# This makes ffmpeg available to yt-dlp
+static_ffmpeg.add_paths()
+
 st.title("🎬 YouTube Downloader")
+
 url = st.text_input("Paste YouTube URL here")
 format_choice = st.radio("Format", ["MP4 Video", "MP3 Audio"])
+cookies_file = st.file_uploader("Upload cookies.txt", type="txt")
 
 if st.button("Download") and url:
-    with st.spinner("Downloading..."):
-        try:
-            with tempfile.TemporaryDirectory() as tmpdir:
-                if format_choice == "MP3 Audio":
-                    ydl_opts = {
-                        'format': 'bestaudio/best',
-                        'outtmpl': f'{tmpdir}/%(title)s.%(ext)s',
-                        'postprocessors': [{'key': 'FFmpegExtractAudio', 'preferredcodec': 'mp3'}],
-                    }
-                else:
-                    ydl_opts = {
-                        # This picks a single pre-merged file — no ffmpeg needed
-                        'format': 'best[ext=mp4]/best',
-                        'outtmpl': f'{tmpdir}/%(title)s.%(ext)s',
-                    }
+    if not cookies_file:
+        st.warning("Please upload your cookies.txt file first.")
+    else:
+        with st.spinner("Downloading..."):
+            try:
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    cookies_path = os.path.join(tmpdir, "cookies.txt")
+                    with open(cookies_path, "wb") as f:
+                        f.write(cookies_file.read())
 
-                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                    ydl.download([url])
+                    if format_choice == "MP3 Audio":
+                        ydl_opts = {
+                            'format': 'besta
 
-                file = os.listdir(tmpdir)[0]
-                filepath = os.path.join(tmpdir, file)
-
-                with open(filepath, "rb") as f:
-                    st.download_button(
-                        label=f"⬇️ Save {file}",
-                        data=f,
-                        file_name=file
-                    )
-        except Exception as e:
-            st.error(f"Download failed: {e}")
