@@ -1,10 +1,7 @@
 import streamlit as st
 import yt_dlp
-import static_ffmpeg
 import os
 import tempfile
- 
-static_ffmpeg.add_paths(download_dir="/tmp")
  
 st.title("YouTube Downloader")
  
